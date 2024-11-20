@@ -26,58 +26,48 @@ def process_image(file_path):
     t_min = 14.7
     t_max = 300
     temp_array = t_min + (img_array / 255) * (t_max - t_min)
-
-    #! instead of RoI, turn pixels with x < 120 or y < 70 to 0
-
     rows, cols = temp_array.shape
-    # temp_array[:70, :] = 0
-    temp_array[:, 500:] = 0
 
-
-    #! allow the line's bounds to go past this quadrant, just not its center
+    # make all pixels outside of the center equal to 0
+    temp_array[:75, :] = 0
+    temp_array[:, :130] = 0
+    # temp_array[50:, :] = 0
 
     # Find the highest temperature and its position
     max_temp = np.max(temp_array)
     
-    if max_temp == 300:
-        # Find all positions with temperature 300
-        max_positions = np.argwhere(temp_array == 300)
-        
-        # Initialize variables to track the best line
-        best_line_sum = -np.inf
-        best_line = None
-        best_line_coords = (0, 0, 0)
-        
-        # Check each position to find the best horizontal line
-        for pos in max_positions:
-            row, col = pos
-            start_col = max(0, col - 55)
-            end_col = min(cols, col + 55 + 1)
-            line = temp_array[row, start_col:end_col]
-            line_sum = np.sum(line)
-            
-            if line_sum > best_line_sum:
-                best_line_sum = line_sum
-                best_line = line
-                best_line_coords = (row, start_col, end_col)
-        
-        # Use the best line found
-        center_row, start_col, end_col = best_line_coords
-        horizontal_line = best_line
-    else:
-        # Find the highest temperature and its position
-        max_pos = np.unravel_index(np.argmax(temp_array), temp_array.shape)
-        max_pos_full = (max_pos[0] + rows // 2, max_pos[1] + cols // 2)
+    max_positions = np.argwhere(temp_array == max_temp)
+    
+    # Find the top 20 highest temperatures and their positions
+    top_n = 70
+    flat_indices = np.argpartition(temp_array.flatten(), -top_n)[-top_n:]
+    top_positions = np.column_stack(np.unravel_index(flat_indices, temp_array.shape))
 
-        # Extract a horizontal line of temperatures (31 pixels centered on max position)
-        center_row = max_pos_full[0]
-        center_col = max_pos_full[1]
-        half_window = 55
-        start_col = max(0, center_col - half_window)
-        end_col = min(cols, center_col + half_window + 1)
-        horizontal_line = temp_array[center_row, start_col:end_col]
+    # Initialize variables to track the best line
+    best_line_sum = -np.inf
+    best_line = None
+    best_line_coords = (0, 0, 0)
 
-    TroubleshootLinePosition(temp_array, center_row, start_col, end_col)
+    line_length = 100
+
+    # Check each position to find the best horizontal line
+    for pos in top_positions:
+        row, col = pos
+        start_col = max(0, col - line_length)
+        end_col = min(cols, col + line_length + 1)
+        line = temp_array[row, start_col:end_col]
+        line_sum = np.sum(line)
+
+        if line_sum > best_line_sum:
+            best_line_sum = line_sum
+            best_line = line
+            best_line_coords = (row, start_col, end_col)
+
+    # Use the best line found
+    center_row, start_col, end_col = best_line_coords
+    horizontal_line = best_line
+
+    # TroubleshootLinePosition(temp_array, center_row, start_col, end_col)
 
     return {
         "max_temp": max_temp,
