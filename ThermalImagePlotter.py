@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 from scipy.ndimage import gaussian_filter1d
+from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
 def get_exif_time(image_path):
@@ -110,29 +111,62 @@ def process_folder(folder_path, reference_time):
 
     return temp_profiles_df
 
-def PlotTemperatureProfiles():
-    # Load the temperature profiles from the CSV file
-    temperature_profiles = pd.read_csv(csvExportPath)
+def PlotThermalTraces():
+    '''plot the temperature profiles'''
 
-    # Create a figure and overlay the profiles
+    temperature_profiles = pd.read_csv(csvExportPath)
     plt.figure(figsize=(14, 10))
 
     # Generate a colormap based on the number of samples
     colormap = plt.cm.viridis
     colors = colormap(np.linspace(0, 1, len(temperature_profiles.columns)))
 
+    def gaussian(x, a, x0, sigma):
+        return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+
+    peak_temps = []
+    peak_temp_errors = []
+
     # Iterate over each column to plot the temperature profiles
-    for i, column in enumerate(temperature_profiles.columns):
+    for i, column in enumerate(temperature_profiles.columns[:13]):
         temperatures = temperature_profiles[column]
-        smoothed_temperatures = gaussian_filter1d(temperatures, sigma=2)  # Smooth the line
+        x_data = range(len(temperatures))
+
+        # Exclude saturated points
+        valid_indices = temperatures < 300
+        x_data_valid = np.array(x_data)[valid_indices]
+        temperatures_valid = temperatures[valid_indices]
+
+        # Fit a horizontal line plus a Gaussian to the profile
+        initial_guess = [np.max(temperatures_valid), np.argmax(temperatures_valid), 10]
+        popt, pcov = curve_fit(gaussian, x_data_valid, temperatures_valid, p0=initial_guess)
+        perr = np.sqrt(np.diag(pcov))
+
+        # Plot the original profile
         plt.plot(
-            range(len(smoothed_temperatures)), 
-            smoothed_temperatures,
+            x_data, 
+            temperatures,
             color=colors[i],  # Color based on the sample (time)
             linewidth=3,  # Width of the line
             label=f"{column}",
             alpha=0.7,
         )
+
+        # Plot the fitted profile as a dotted line
+        fitted_profile = gaussian(np.array(x_data), *popt)
+        plt.plot(
+            x_data, 
+            fitted_profile,
+            color=colors[i],  # Same color as the original profile
+            linestyle='dotted',
+            linewidth=2,
+            alpha=0.7,
+        )
+
+        # Store the peak temperature from the fit and its error
+        peak_temps.append(popt[0])
+        peak_temp_errors.append(perr[0])
+
     plt.xlabel("Pixel Index", fontsize=20)
     plt.ylabel("Temperature (°C)", fontsize=20)
     plt.legend(title="time (s)", loc="upper left", fontsize=14, title_fontsize=14, bbox_to_anchor=(1.05, 1))
@@ -142,19 +176,31 @@ def PlotTemperatureProfiles():
 
     # Plot Max T vs time with fits
     plt.figure(figsize=(14, 10))
-    max_temps = temperature_profiles.apply(np.max, axis=0)
-    max_temps_times = [int(col.split()[0]) for col in max_temps.index]
-    plt.scatter(max_temps_times, max_temps, color="red", s=100, label="Max Temp", zorder=10)
+    max_temps_times = [int(col.split()[0]) for col in temperature_profiles.columns[:13]]
+    plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10)
 
-    # # fits to max T vs time
-    # max_temps_times_log = np.log(max_temps_times[:4])
-    # max_temps_log = np.log(max_temps[:4])
-    # max_temps_times_exp = max_temps_times[13:]
-    # max_temps_exp = max_temps[13:]
-    # p_log = np.polyfit(max_temps_times_log, max_temps_log, 1)
-    # p_exp = np.polyfit(max_temps_times_exp, max_temps_exp, 1)
-    # plt.plot(max_temps_times, np.exp(np.polyval(p_log, np.log(max_temps_times))), color="blue", label="Log Growth Fit")
-    # plt.plot(max_temps_times, np.polyval(p_exp, max_temps_times), color="green", label="Exponential Decay Fit")
+    # Fit a logarithmic curve to the peak temperatures
+    def log_curve(x, a, b):
+        return a * np.log(x) + b
+
+    log_popt, log_pcov = curve_fit(log_curve, max_temps_times, peak_temps)
+    log_perr = np.sqrt(np.diag(log_pcov))
+
+    # Plot the fitted logarithmic curve
+    x_fit = np.linspace(min(max_temps_times), max(max_temps_times), 100)
+    y_fit = log_curve(x_fit, *log_popt)
+    plt.plot(x_fit, y_fit, color="blue", linestyle='--', label=f'Fit: {log_popt[0]:.2f}*log(x) + {log_popt[1]:.2f}')
+
+    plt.xlabel("Time (s)", fontsize=20)
+    plt.ylabel("Peak Temperature (°C)", fontsize=20)
+    plt.legend(loc="upper left", fontsize=14)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.tight_layout()
+
+    # Print the equation and error
+    print(f"Fitted equation: {log_popt[0]:.2f}*log(x) + {log_popt[1]:.2f}")
+    print(f"Errors: {log_perr}")
 
     # Render figures
     plt.show()
@@ -173,5 +219,5 @@ temp_profiles_df.to_csv(csvExportPath, index=False)
 
 #%%
 ## plot the temperature profiles
-PlotTemperatureProfiles()
+PlotThermalTraces()
 #%%
