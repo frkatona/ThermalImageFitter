@@ -39,7 +39,8 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
     - fit the max temperature vs time (exponential seems ok, need to think about this more)
 
 ### Figure 1: Experimental setup
-808 nm CW ~7 W/cm^2 beam on uncured ~2 cm thick pouring of 1% wt/wt CB-PDMS into a weigh boat
+
+Here, a 808 nm CW ~7 W/cm^2 beam (unfocused from the fiber optic tip) was incident on ~2 cm of uncured 1% wt/wt CB-PDMS in a weigh boat.  The thermal camera was positioned ~10 cm from the weigh boat and the laser was turned off at t = 60 s.
 
 ![Experimental setup](exports/1_experimentalSetup.png)
 
@@ -49,23 +50,41 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
 
 ### Figure 3: CSV of mapped temperatures across multiple images
 
+Note that the script can be run in a modular fashion such that the CSV is created once and then the plotting and fitting parameters can be fine-tuned without re-running the image processing.
+
 ![exported data](exports/3_csv.png)
 
-### Figure 4: Heat map for a given column with the profile line overlaid
+### Figure 4: Heat map for an arbitrary column with the profile line overlaid
+
+Note that the scale bar and watermark would appear in the worked up image if not for the script zeroing these regions.
 
 ![Example hot line](exports/4_exampleLine.png)
 
 ### Figure 5: Heating and cooling profiles across images (smoothed, no fit)
 
+Note that while images were taken at second 1 as well as every 5 seconds for 2 minutes, the laser was turned off after the first 60 seconds, and so the final 60 seconds are cooling profiles.
+
 ![heating and cooling profiles - smoothed](exports/5_heating-and-cooling-profiles_smoothed.png)
 
 ### Figure 6: Heating thermal profiles across images (no smoothing, gaussian fit)
+
+Note that the gaussian fits estimate the maximum temperature of the object for saturated profiles.
 
 ![heating thermal profiles](exports/6_thermalprofiles.png)
 
 ### Figure 7: Max temperature vs time with exp. fit
 
 ![max temperature vs time with fit](exports/7_maxTempVsTime.png)
+
+### Figure 8: Cooling thermal profiles across images (no smoothing, gaussian fit)
+
+Figures 8 and 9 are similar to Figures 6 and 7, but for the cooling profiles.  Their usefulness is unclear at this time, but the seeing the viridis colormap transition across two images is cool and I am tired.
+
+![cooling traces](exports/8_coolingImage.png)
+
+### Figure 9: Max temperature vs time with exp. fit for cooling traces
+
+![max temperature vs time with fit for cooling traces](exports/9_coolingTvstime.png)
 
 ## todo
 
@@ -78,10 +97,11 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
 - [x] update the fitting model for max T vs time
   - [ ] exponential seems to fit nicely, but I think to think about the physical implications more and understand both the fit equation and the error propagation
 - [x] remove the "cooling" profile from the main figure
-  - [ ] make their own figure starting from the final "heating" profile
+  - [x] make cooling profiles figures similar to the heating profiles
+- [ ] see if Ben's gaussian combo fit results in less error
 - [ ] polish formatting (font/size, titles, grids, labels, positions, point size, fit equations)
 
-## misc. notes
+## misc. camera notes
 
 - screen updates at about 9 Hz
 
@@ -89,7 +109,7 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
   
 - how are thermal images 640 x 480  when the "IR resolution" is only 198 x 96?
 
-- unclear to precisely what extent emissivity differences and reflected radiation are accounted for in the temperature mapping...interestingly, the weigh-boat wings 
+- unclear to precisely what extent emissivity differences and reflected radiation are accounted for in the temperature mapping...interestingly, the weigh-boat wings
   
 ## resources
 

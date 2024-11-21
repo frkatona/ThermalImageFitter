@@ -68,7 +68,7 @@ def process_image(file_path):
     center_row, start_col, end_col = best_line_coords
     horizontal_line = best_line
 
-    TroubleshootLinePosition(temp_array, center_row, start_col, end_col)
+    # TroubleshootLinePosition(temp_array, center_row, start_col, end_col)
 
     return {
         "max_temp": max_temp,
@@ -126,7 +126,6 @@ def PlotThermalTraces():
 
     peak_temps = []
     peak_temp_errors = []
-
     # Iterate over each column to plot the temperature profiles
     for i, column in enumerate(temperature_profiles.columns[:13]):
         temperatures = temperature_profiles[column]
@@ -182,6 +181,10 @@ def PlotThermalTraces():
     # Fit peak temps
     def exponential_growth(t, T_steady, T_0, k):
         return T_steady - (T_steady - T_0) * np.exp(-k * t)
+    
+    def exponential_decay(t, T_steady, T_0, k):
+        return T_0 + (T_steady - T_0) * np.exp(-k * t)
+
     exp_popt, exp_pcov = curve_fit(exponential_growth, max_temps_times, peak_temps, p0=[85, 20, 0.1])
     time_fit = np.linspace(min(max_temps_times), max(max_temps_times), 100)
     exp_fit = exponential_growth(time_fit, *exp_popt)
@@ -189,6 +192,79 @@ def PlotThermalTraces():
     plt.plot(time_fit, exp_fit, label=f'Exponential Fit: {exp_popt[0]:.2f} - ({exp_popt[0]:.2f} - {exp_popt[1]:.2f}) * exp(-{exp_popt[2]:.2f} * t)', color='blue', linewidth=3)
 
     plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10, markersize=10)
+
+    plt.xlabel("Time (s)", fontsize=20)
+    plt.ylabel("Temperature (°C)", fontsize=20)
+    plt.legend(fontsize=14)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.tight_layout()
+    plt.show()
+
+    # Consolidate profiles and fits of columns [13:] into one figure
+    plt.figure(figsize=(14, 10))
+    peak_temps_13 = []
+    peak_temp_errors_13 = []
+    for i, column in enumerate(temperature_profiles.columns[13:], start=13):
+        temperatures = temperature_profiles[column]
+        x_data = range(len(temperatures))
+
+        # Exclude saturated points
+        valid_indices = temperatures < 300
+        x_data_valid = np.array(x_data)[valid_indices]
+        temperatures_valid = temperatures[valid_indices]
+
+        # Fit a horizontal line plus a Gaussian to the profile
+        initial_guess = [np.max(temperatures_valid), np.argmax(temperatures_valid), 10]
+        popt, pcov = curve_fit(gaussian, x_data_valid, temperatures_valid, p0=initial_guess)
+        perr = np.sqrt(np.diag(pcov))
+
+        # Plot the original profile
+        plt.plot(
+            x_data, 
+            temperatures,
+            color=colors[i % len(colors)],  # Color based on the sample (time)
+            linewidth=3,  # Width of the line
+            label=f"{column}",
+            alpha=0.7,
+        )
+
+        # Plot the fitted profile as a dotted line
+        fitted_profile = gaussian(np.array(x_data), *popt)
+        plt.plot(
+            x_data, 
+            fitted_profile,
+            color=colors[i % len(colors)],  # Same color as the original profile
+            linestyle='dotted',
+            linewidth=2,
+            alpha=0.7,
+        )
+
+        # Store the peak temperature from the fit and its error
+        peak_temps_13.append(popt[0])
+        peak_temp_errors_13.append(perr[0])
+
+    plt.xlabel("Pixel Index", fontsize=20)
+    plt.ylabel("Temperature (°C)", fontsize=20)
+    plt.legend(title="time (s)", loc="upper left", fontsize=14, title_fontsize=14, bbox_to_anchor=(1.05, 1))
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.tight_layout()
+    plt.show()
+
+    # Plot Max T vs time with fits for columns [13:]
+    plt.figure(figsize=(14, 10))
+    max_temps_times_13 = [int(col.split()[0]) for col in temperature_profiles.columns[13:]]
+    plt.errorbar(max_temps_times_13, peak_temps_13, yerr=peak_temp_errors_13, fmt='o', color="red", label="Peak Temp", zorder=10)
+
+    # Fit peak temps
+    exp_popt_13, exp_pcov_13 = curve_fit(exponential_decay, max_temps_times_13, peak_temps_13, p0=[85, 20, 0.1])
+    time_fit_13 = np.linspace(min(max_temps_times_13), max(max_temps_times_13), 100)
+    exp_fit_13 = exponential_decay(time_fit_13, *exp_popt_13)
+
+    plt.plot(time_fit_13, exp_fit_13, label=f'Exponential Fit: {exp_popt_13[0]:.2f} - ({exp_popt_13[0]:.2f} - {exp_popt_13[1]:.2f}) * exp(-{exp_popt_13[2]:.2f} * t)', color='blue', linewidth=3)
+
+    plt.errorbar(max_temps_times_13, peak_temps_13, yerr=peak_temp_errors_13, fmt='o', color="red", label="Peak Temp", zorder=10, markersize=10)
 
     plt.xlabel("Time (s)", fontsize=20)
     plt.ylabel("Temperature (°C)", fontsize=20)
