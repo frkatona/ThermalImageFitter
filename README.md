@@ -46,7 +46,7 @@ Here, a 808 nm CW ~7 W/cm^2 beam (unfocused from the fiber optic tip) was incide
 
 ![Experimental setup](exports/1_experimentalSetup.png)
 
-### Figure 2: Example Thermal Image Input
+### Figure 2: Example thermal image
 
 ![FLIR Example 3](Nov19/FLIR2191.jpg)
 
