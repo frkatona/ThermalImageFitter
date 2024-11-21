@@ -32,7 +32,7 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
     - zero the rows and columns where the FLIR camera's temperature scale and watermark appear
     - find a representative position for the thermal profile line (current method generates lines centered at the highest value pixels and accepts that which sums to the highest value)
       - this can be visualized by uncommenting the `TroubleshootLinePosition` function
-3. determine the temperature along this line as well as the maximum temperature vs time
+3. plot and fit (1) the temperature along this line as well as (2) the maximum temperature vs time
     - plot the temperature profile along this line for each image on a single figure
     - generate a fit for each profile
       - partially to smooth the mild jpeg compression artifacts, but largely to reasonably estimate of maximum temperature for profiles that exceed the IR detector's range
