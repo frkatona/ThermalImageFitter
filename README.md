@@ -74,7 +74,8 @@ This script reads in thermal images and plots the temperature profile along a li
   - [x] increase line length by enough to capture T_infinity
 - [x] remove smoothing and instead try a baseline + gaussian fit
   - [x] replace the over-exposed max T scatterplot values with the amplitude of the fit trace
-- [x] update the fitting model for max T vs time (an exponential seemed ok)
+- [x] update the fitting model for max T vs time
+  - [ ] exponential seems to fit nicely, but I think to think about the physical implications more and understand both the fit equation and the error propagation
 - [x] remove the "cooling" profile from the main figure
   - [ ] make their own figure starting from the final "heating" profile
 - [ ] polish formatting (font/size, titles, grids, labels, positions, point size, fit equations)
