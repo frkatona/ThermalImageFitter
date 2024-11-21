@@ -40,7 +40,7 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
 
 ### Figure 1: Experimental setup
 
-Here, a 808 nm CW ~7 W/cm^2 beam (unfocused from the fiber optic tip) was incident on ~2 cm of uncured 1% wt/wt CB-PDMS in a weigh boat.  The thermal camera was positioned ~10 cm from the weigh boat and the laser was turned off at t = 60 s.
+Here, a 808 nm CW ~7 W/cm^2 beam (unfocused from the fiber optic tip) was incident on a 20 g sample (~2 cm deep) of uncured, degassed 1% wt/wt CB-PDMS in a weigh boat.  The thermal camera was positioned ~10 cm from the weigh boat and the laser was turned off at t = 60 s.
 
 ![Experimental setup](exports/1_experimentalSetup.png)
 
