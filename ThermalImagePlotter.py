@@ -68,7 +68,7 @@ def process_image(file_path):
     center_row, start_col, end_col = best_line_coords
     horizontal_line = best_line
 
-    # TroubleshootLinePosition(temp_array, center_row, start_col, end_col)
+    TroubleshootLinePosition(temp_array, center_row, start_col, end_col)
 
     return {
         "max_temp": max_temp,
@@ -179,31 +179,26 @@ def PlotThermalTraces():
     max_temps_times = [int(col.split()[0]) for col in temperature_profiles.columns[:13]]
     plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10)
 
-    # Fit a logarithmic curve to the peak temperatures
-    def log_curve(x, a, b):
-        return a * np.log(x) + b
+    # Fit peak temps
+    def exponential_growth(t, T_steady, T_0, k):
+        return T_steady - (T_steady - T_0) * np.exp(-k * t)
+    exp_popt, exp_pcov = curve_fit(exponential_growth, max_temps_times, peak_temps, p0=[85, 20, 0.1])
+    time_fit = np.linspace(min(max_temps_times), max(max_temps_times), 100)
+    exp_fit = exponential_growth(time_fit, *exp_popt)
 
-    log_popt, log_pcov = curve_fit(log_curve, max_temps_times, peak_temps)
-    log_perr = np.sqrt(np.diag(log_pcov))
+    plt.plot(time_fit, exp_fit, label=f'Exponential Fit: {exp_popt[0]:.2f} - ({exp_popt[0]:.2f} - {exp_popt[1]:.2f}) * exp(-{exp_popt[2]:.2f} * t)', color='blue', linewidth=3)
 
-    # Plot the fitted logarithmic curve
-    x_fit = np.linspace(min(max_temps_times), max(max_temps_times), 100)
-    y_fit = log_curve(x_fit, *log_popt)
-    plt.plot(x_fit, y_fit, color="blue", linestyle='--', label=f'Fit: {log_popt[0]:.2f}*log(x) + {log_popt[1]:.2f}')
+    plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10, markersize=10)
 
     plt.xlabel("Time (s)", fontsize=20)
-    plt.ylabel("Peak Temperature (°C)", fontsize=20)
-    plt.legend(loc="upper left", fontsize=14)
+    plt.ylabel("Temperature (°C)", fontsize=20)
+    plt.legend(fontsize=14)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.tight_layout()
-
-    # Print the equation and error
-    print(f"Fitted equation: {log_popt[0]:.2f}*log(x) + {log_popt[1]:.2f}")
-    print(f"Errors: {log_perr}")
-
-    # Render figures
     plt.show()
+
+
 
 ##########
 ## MAIN ##
