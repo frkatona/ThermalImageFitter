@@ -28,11 +28,11 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
    - map the pixel values for each image to the temperature range
    - export a csv of temperature arrays for each time
      - time is extracted from exif data within the image relative to a manually entered start time
-2. find the region of interest and extract a thermal profile
+2. find the region of interest and extract temperatures along a line through the hottest point
     - zero the rows and columns where the FLIR camera's temperature scale and watermark appear
     - find a representative position for the thermal profile line (current method generates lines centered at the highest value pixels and accepts that which sums to the highest value)
       - this can be visualized by uncommenting the `TroubleshootLinePosition` function
-3. plot the temperature profile along this line and the maximum temperature vs time
+3. determine the temperature along this line as well as the maximum temperature vs time
     - plot the temperature profile along this line for each image on a single figure
     - generate a fit for each profile
       - partially to smooth the mild jpeg compression artifacts, but largely to reasonably estimate of maximum temperature for profiles that exceed the IR detector's range
