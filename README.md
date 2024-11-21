@@ -11,6 +11,8 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
 - set the FLIR camera to black and white mode ("white hot")
   
 - change the temperature range from "-20 C to 150 C" to "0 C to 300 C" (or similar)
+
+  - note that a red "hot spot" view can be enabled to show the hottest pixel in the image (which can be useful for real time monitoring), but it will not influence the upper bound of the temperature scale which can and will nonetheless destructively saturates the image  
   
 - modify the temperature scale from its default auto-scale to a fixed scale (here, "15 C" to "300 C")
   
