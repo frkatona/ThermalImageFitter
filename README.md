@@ -4,14 +4,18 @@ This script reads in thermal images and plots the temperature profile along a li
 
 ## How to use
 
-**Experimental details for best results:**
+**Experimental details for best results on a FLIR CX-3:**
 
+- disable the edge detection overlay ("MSX")
+  
 - set the FLIR camera to black and white mode ("white hot")
   
 - change the temperature range from "-20 C to 150 C" to "0 C to 300 C" (or similar)
   
 - modify the temperature scale from its default auto-scale to a fixed scale (here, "15 C" to "300 C")
   
+- mind the microbolometer minimal focal distance (10 cm)
+
 - keep consistent framing across a series of thermal images
   
 - keep the region of interest contained within the bounds of the display with little-to-no overlap with the FLIR camera's temperature scale or the watermark
@@ -33,33 +37,34 @@ This script reads in thermal images and plots the temperature profile along a li
     - extract the maximum temperature for each profile from these fits and plot them vs time
     - fit the max temperature vs time (exponential seems ok, need to think about this more)
 
-### Figure 1: Example Thermal Image Input
+### Figure 1: Experimental setup
+808 nm CW ~7 W/cm^2 beam on uncured ~2 cm thick pouring of 1% wt/wt CB-PDMS into a weigh boat
+
+![Experimental setup](exports/1_experimentalSetup.png)
+
+### Figure 2: Example Thermal Image Input
 
 ![FLIR Example 3](Nov19/FLIR2191.jpg)
 
-### Figure 2: extracted data
+### Figure 3: CSV of mapped temperatures across multiple images
 
-![exported data](exports/0_csv.png)
+![exported data](exports/3_csv.png)
 
-### Figure 2: Heat map for a given column with the profile line overlaid
+### Figure 4: Heat map for a given column with the profile line overlaid
 
-![Example hot line](exports/0_exampleLine.png)
+![Example hot line](exports/4_exampleLine.png)
 
-### Figure 3: Heating and cooling profiles across images (smoothed, no fit)
+### Figure 5: Heating and cooling profiles across images (smoothed, no fit)
 
-![heating and cooling profiles - smoothed](exports/heating-and-cooling-profiles_smoothed.png)
+![heating and cooling profiles - smoothed](exports/5_heating-and-cooling-profiles_smoothed.png)
 
-### Figure 4: Heating thermal profiles across images (no smoothing, gaussian fit)
+### Figure 6: Heating thermal profiles across images (no smoothing, gaussian fit)
 
-![heating thermal profiles](exports/1_thermalprofiles.png)
+![heating thermal profiles](exports/6_thermalprofiles.png)
 
-### Figure 5: Max temperature vs time with exp. fit
+### Figure 7: Max temperature vs time with exp. fit
 
-![max temperature vs time with fit](exports/2_maxTempVsTime.png)
-
-Fitted equation: 419.97*log(x) + 43.05
-
-Errors: [6.02924116e+00 8.42346323e+00 3.79946814e-03]
+![max temperature vs time with fit](exports/7_maxTempVsTime.png)
 
 ## todo
 
@@ -76,7 +81,13 @@ Errors: [6.02924116e+00 8.42346323e+00 3.79946814e-03]
 
 ## misc. notes
 
-- thermal images are 640 x 480 pixels
+- screen updates at about 9 Hz
+
+- measurement accuracy is +/- 3% across entire temperature range (0 C - 300 C)
+  
+- how are thermal images 640 x 480  when the "IR resolution" is only 198 x 96?
+
+- unclear to precisely what extent emissivity differences and reflected radiation are accounted for in the temperature mapping...interestingly, the weigh-boat wings 
   
 ## resources
 
