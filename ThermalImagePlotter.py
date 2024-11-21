@@ -4,7 +4,6 @@ from PIL import Image, ExifTags
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
@@ -199,7 +198,6 @@ def PlotThermalTraces():
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.tight_layout()
-    plt.show()
 
     # Consolidate profiles and fits of columns [13:] into one figure
     plt.figure(figsize=(14, 10))
@@ -250,7 +248,6 @@ def PlotThermalTraces():
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.tight_layout()
-    plt.show()
 
     # Plot Max T vs time with fits for columns [13:]
     plt.figure(figsize=(14, 10))

@@ -100,16 +100,18 @@ Figures 8 and 9 are similar to Figures 6 and 7, but for the cooling profiles.  T
   - [ ] exponential seems to fit nicely, but I think to think about the physical implications more and understand both the fit equation and the error propagation
 - [x] remove the "cooling" profile from the main figure
   - [x] make cooling profiles figures similar to the heating profiles
-- [ ] see if Ben's gaussian combo fit results in less error
+- [ ] see if Ben's gaussian combo fit results in less error (I wonder if it was necessary because of the more uniform power profile from the collimator...though wouldn't using one gaussian for a gaussian beam and another for the gaussian heat spread would be more intuitive?)
 - [ ] polish formatting (font/size, titles, grids, labels, positions, point size, fit equations)
 
-## misc. camera notes
+## misc. notes
 
 - screen updates at about 9 Hz
 
 - measurement accuracy is +/- 3% across entire temperature range (0 C - 300 C)
   
 - how are thermal images 640 x 480  when the "IR resolution" is only 198 x 96?
+
+- how are the temperature values so close together with 256 levels across 14.7 to 300 C (~285)?
 
 - unclear to precisely what extent emissivity differences and reflected radiation are accounted for in the temperature mapping...interestingly, the weigh-boat wings seem to reflect a noticeable amount of radiation, as the parts at angles connecting the hot spot to the camera appear warm relative to their surroundings while the laser is on, but the temperature seems diffuse/continous when the laser is off
   
