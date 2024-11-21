@@ -111,7 +111,7 @@ Figures 8 and 9 are similar to Figures 6 and 7, but for the cooling profiles.  T
   
 - how are thermal images 640 x 480  when the "IR resolution" is only 198 x 96?
 
-- unclear to precisely what extent emissivity differences and reflected radiation are accounted for in the temperature mapping...interestingly, the weigh-boat wings
+- unclear to precisely what extent emissivity differences and reflected radiation are accounted for in the temperature mapping...interestingly, the weigh-boat wings seem to reflect a noticeable amount of radiation, as the parts at angles connecting the hot spot to the camera appear warm relative to their surroundings while the laser is on, but the temperature seems diffuse/continous when the laser is off
   
 ## resources
 
