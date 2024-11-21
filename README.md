@@ -33,6 +33,7 @@ This script reads in thermal images and plots the temperature profile along a li
 3. plot the temperature profile along this line and the maximum temperature vs time
     - plot the temperature profile along this line for each image on a single figure
     - generate a fit for each profile
+      - partially to smooth the mild jpeg compression artifacts, but largely to reasonably estimate of maximum temperature for profiles that exceed the IR detector's range
       - baseline + gaussian seems to work well if the profile is not saturated or if the saturated region (i.e. where T = maximum possible T) is removed from the fit
     - extract the maximum temperature for each profile from these fits and plot them vs time
     - fit the max temperature vs time (exponential seems ok, need to think about this more)
