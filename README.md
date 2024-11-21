@@ -1,6 +1,6 @@
 # Thermal Image Plotting and Fitting
 
-This script reads in thermal images and plots the temperature profile along a line through the image. It also fits the max temperature vs time to an exponential decay.
+This script takes the path to a folder of FLIR CX-3 thermal images and plots the temperature profile along a line through the image. It also determines the maximum temperature of the object (even if the detector is saturated) at each image's time (from the files' metadata) and plots the relationship.
 
 ## How to use
 
