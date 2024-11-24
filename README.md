@@ -49,7 +49,7 @@ This script takes the path to a folder of FLIR CX-3 thermal images and plots the
 
 Here, a 808 nm CW ~7 W/cm^2 beam (unfocused from the fiber optic tip) was incident on a 20 g sample (~2 cm deep) of uncured, degassed 1% wt/wt CB-PDMS in a weigh boat.  The thermal camera was positioned ~10 cm from the weigh boat and the laser was turned off at t = 60 s.
 
-![Experimental setup](exports/1_experimentalSetup.png)
+![Experimental setup](exports/01_experimentalSetup.png)
 
 ### Figure 2: Example thermal image
 
@@ -59,39 +59,44 @@ Here, a 808 nm CW ~7 W/cm^2 beam (unfocused from the fiber optic tip) was incide
 
 Note that the script can be run in a modular fashion such that the CSV is created once and then the plotting and fitting parameters can be fine-tuned without re-running the image processing.
 
-![exported data](exports/3_csv.png)
+![exported data](exports/03_csv.png)
 
 ### Figure 4: Heat map for an arbitrary column with the profile line overlaid
 
 Note that the scale bar and watermark would appear in the worked up image if not for the script zeroing these regions.
 
-![Example hot line](exports/4_exampleLine.png)
+![Example hot line](exports/04_exampleLine.png)
 
 ### Figure 5: Heating and cooling profiles across images (smoothed, no fit)
 
 Note that while images were taken at second 1 as well as every 5 seconds for 2 minutes, the laser was turned off after the first 60 seconds, and so the final 60 seconds are cooling profiles.
 
-![heating and cooling profiles - smoothed](exports/5_heating-and-cooling-profiles_smoothed.png)
+![heating and cooling profiles - smoothed](exports/05_heating-and-cooling-profiles_smoothed.png)
 
 ### Figure 6: Heating thermal profiles across images (no smoothing, gaussian fit)
 
 Note that the gaussian fits estimate the maximum temperature of the object for saturated profiles.
 
-![heating thermal profiles](exports/6_thermalprofiles.png)
+![heating thermal profiles](exports/06_thermalprofiles.png)
 
 ### Figure 7: Max temperature vs time with exp. fit
 
-![max temperature vs time with fit](exports/7_maxTempVsTime.png)
+![max temperature vs time with fit](exports/07_maxTempVsTime.png)
 
-### Figure 8: Cooling thermal profiles across images (no smoothing, gaussian fit)
+### Figure 8: Residuals for the heating fits
+
+![heating residuals](exports/08_residuals_1.png)
+
+
+### Figure 9: Cooling thermal profiles across images (no smoothing, gaussian fit)
 
 Figures 8 and 9 are similar to Figures 6 and 7, but for the cooling profiles.  Their usefulness is unclear at this time, but the seeing the viridis colormap transition across two images is cool and I am tired.
 
-![cooling traces](exports/8_coolingImage.png)
+![cooling traces](exports/09_coolingImage.png)
 
-### Figure 9: Max temperature vs time with exp. fit for cooling traces
+### Figure 10: Max temperature vs time with exp. fit for cooling traces
 
-![max temperature vs time with fit for cooling traces](exports/9_coolingTvstime.png)
+![max temperature vs time with fit for cooling traces](exports/10_coolingTvstime.png)
 
 ## todo
 
@@ -105,8 +110,10 @@ Figures 8 and 9 are similar to Figures 6 and 7, but for the cooling profiles.  T
   - [ ] exponential seems to fit nicely, but I think to think about the physical implications more and understand both the fit equation and the error propagation
 - [x] remove the "cooling" profile from the main figure
   - [x] make cooling profiles figures similar to the heating profiles
-- [ ] simplify the time extraction so the user doesn't have to manually enter the start time (maybe include a "laser time before first image" variable and subtract that from the first image's time to get the start time?)
-- [ ] see if Ben's gaussian combo fit results in less error (I wonder if it was necessary because of the more uniform power profile from the collimator...though wouldn't using one gaussian for a gaussian beam and another for the gaussian heat spread would be more intuitive?)
+- [x] simplify the time extraction so the user doesn't have to manually enter the start time --> found the time for the first image and created a "time-offset" variable to subtract from the first image time for when the first image was taken after t = 0
+- [ ] generalize the magic number cutoff index for the time where I turned off the laser
+- [ ] see if Ben's gaussian combo fit results in less error (thought: gaussian is probably good for a point power source and so having a the power over an area maybe makes sense that there would be an "inner" gaussian based on beam profile, power, and cooling and an "outer" gaussian based on conductive heating from the hot spot and maybe a little convective cooling)
+  - [x] assess with a residual plot --> it does seem to suggest that a separate fit within the laser bounds would be beneficial, though it seems far less egregious than the collimated data's single-gaussian (tough to be sure since I don't know how the y-axis is scaled is in Ben's residual graph)
 - [ ] polish formatting (font/size, titles, grids, labels, positions, point size, fit equations)
 
 ## misc. notes

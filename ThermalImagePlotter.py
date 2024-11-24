@@ -36,8 +36,6 @@ def process_image(file_path):
     # Find the highest temperature and its position
     max_temp = np.max(temp_array)
     
-    max_positions = np.argwhere(temp_array == max_temp)
-    
     # Find the top 20 highest temperatures and their positions
     top_n = 70
     flat_indices = np.argpartition(temp_array.flatten(), -top_n)[-top_n:]
@@ -73,7 +71,7 @@ def process_image(file_path):
         "max_temp": max_temp,
         "horizontal_line": horizontal_line,
         "line_coords": (center_row, start_col, end_col),
-        "time": get_exif_time(file_path),
+        "time": get_exif_time(file_path)
     }
 
 def TroubleshootLinePosition(temp_array, center_row, start_col, end_col):
@@ -131,7 +129,7 @@ def PlotThermalTraces():
         x_data = range(len(temperatures))
 
         # Exclude saturated points
-        valid_indices = temperatures < 300
+        valid_indices = temperatures < 270 # lowered slightly from 300 in case the saturation influence extends down a bit
         x_data_valid = np.array(x_data)[valid_indices]
         temperatures_valid = temperatures[valid_indices]
 
@@ -260,17 +258,76 @@ def PlotThermalTraces():
     exp_fit_13 = exponential_decay(time_fit_13, *exp_popt_13)
 
     plt.plot(time_fit_13, exp_fit_13, label=f'Exponential Fit: {exp_popt_13[0]:.2f} - ({exp_popt_13[0]:.2f} - {exp_popt_13[1]:.2f}) * exp(-{exp_popt_13[2]:.2f} * t)', color='blue', linewidth=3)
-
     plt.errorbar(max_temps_times_13, peak_temps_13, yerr=peak_temp_errors_13, fmt='o', color="red", label="Peak Temp", zorder=10, markersize=10)
-
     plt.xlabel("Time (s)", fontsize=20)
     plt.ylabel("Temperature (°C)", fontsize=20)
     plt.legend(fontsize=14)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.tight_layout()
-    plt.show()
 
+    # Plot residuals for columns [:13]
+    plt.figure(figsize=(14, 10))
+    for i, column in enumerate(temperature_profiles.columns[:13]):
+        temperatures = temperature_profiles[column]
+        x_data = range(len(temperatures))
+
+        # Exclude saturated points
+        valid_indices = temperatures < 270
+        x_data_valid = np.array(x_data)[valid_indices]
+        temperatures_valid = temperatures[valid_indices]
+
+        fitted_profile = gaussian(x_data_valid, *curve_fit(gaussian, x_data_valid, temperatures_valid, p0=[np.max(temperatures_valid), np.argmax(temperatures_valid), 10])[0])
+        residuals = temperatures_valid - fitted_profile
+
+        plt.plot(
+            x_data_valid, 
+            residuals,
+            color=colors[i],  # Color based on the sample (time)
+            linewidth=2, 
+            label=f"{column}",
+            alpha=0.7,
+        )
+
+    plt.axhline(0, color='black', linewidth=1, linestyle='dashed')
+    plt.xlabel("Pixel Index", fontsize=20)
+    plt.ylabel("Residuals (°C)", fontsize=20)
+    plt.legend(title="time (s)", loc="upper left", fontsize=14, title_fontsize=14, bbox_to_anchor=(1.05, 1))
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.tight_layout()
+
+    # Plot residuals for columns [13:]
+    plt.figure(figsize=(14, 10))
+    for i, column in enumerate(temperature_profiles.columns[13:], start=13):
+        temperatures = temperature_profiles[column]
+        x_data = range(len(temperatures))
+
+        # Exclude saturated points
+        valid_indices = temperatures < 300
+        x_data_valid = np.array(x_data)[valid_indices]
+        temperatures_valid = temperatures[valid_indices]
+
+        fitted_profile = gaussian(x_data_valid, *curve_fit(gaussian, x_data_valid, temperatures_valid, p0=[np.max(temperatures_valid), np.argmax(temperatures_valid), 10])[0])
+        residuals = temperatures_valid - fitted_profile
+
+        plt.plot(
+            x_data_valid, 
+            residuals,
+            color=colors[i % len(colors)],  # Color based on the sample (time)
+            linewidth=2,  # Width of the line
+            label=f"{column}",
+            alpha=0.7,
+        )
+
+    plt.axhline(0, color='black', linewidth=1, linestyle='dashed')
+    plt.xlabel("Pixel Index", fontsize=20)
+    plt.ylabel("Residuals (°C)", fontsize=20)
+    plt.legend(title="time (s)", loc="upper left", fontsize=14, title_fontsize=14, bbox_to_anchor=(1.05, 1))
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.tight_layout()
+    plt.show()
 
 
 ##########
@@ -278,7 +335,12 @@ def PlotThermalTraces():
 ##########
 
 folder_path = "Nov19"
-reference_time = datetime.strptime("2024-11-19 14:19:14", "%Y-%m-%d %H:%M:%S")
+
+# Calculate reference time for metadata time extraction
+first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
+time_0 = get_exif_time(first_image_path)
+time_offset = 1 # seconds before first image
+reference_time = time_0 - pd.to_timedelta(time_offset, unit='s')
 
 ## Process the thermal image data and export temperatures to a new CSV file
 temp_profiles_df = process_folder(folder_path, reference_time)
