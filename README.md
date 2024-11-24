@@ -112,6 +112,9 @@ Figures 8 and 9 are similar to Figures 6 and 7, but for the cooling profiles.  T
   - [x] make cooling profiles figures similar to the heating profiles
 - [x] simplify the time extraction so the user doesn't have to manually enter the start time --> found the time for the first image and created a "time-offset" variable to subtract from the first image time for when the first image was taken after t = 0
 - [ ] generalize the magic number cutoff index for the time where I turned off the laser
+- [ ]  consider the fitting cutoff (it has been updated to ignore points within 30 C of the threshold to avoid any detector saturation influence, but I want to say the 300 C cutoff is mostly digital, i.e., the detector response should be robust up to 300 C)
+  - [ ] assess the effect of the cutoff on the fit
+  - [ ] consider a more sophisticated cutoff (e.g. a gaussian fit to the data and then a cutoff based on the fit)
 - [ ] see if Ben's gaussian combo fit results in less error (thought: gaussian is probably good for a point power source and so having a the power over an area maybe makes sense that there would be an "inner" gaussian based on beam profile, power, and cooling and an "outer" gaussian based on conductive heating from the hot spot and maybe a little convective cooling)
   - [x] assess with a residual plot --> it does seem to suggest that a separate fit within the laser bounds would be beneficial, though it seems far less egregious than the collimated data's single-gaussian (tough to be sure since I don't know how the y-axis is scaled is in Ben's residual graph)
 - [ ] polish formatting (font/size, titles, grids, labels, positions, point size, fit equations)
