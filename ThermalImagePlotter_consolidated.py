@@ -4,6 +4,9 @@
 # produce a version with only a handful of representative datasets (main paper)
 # consolidate residuals (SI)
 
+# color red/blue
+# intervals to 0.5 cm
+
 import os
 from PIL import Image, ExifTags
 import numpy as np
@@ -11,6 +14,8 @@ import pandas as pd
 from datetime import datetime
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+
+fontsize = 20
 
 def get_exif_time(image_path):
     """Extract the DateTime metadata from an image."""
@@ -82,13 +87,13 @@ def process_image(file_path):
 def TroubleshootLinePosition(temp_array, center_row, start_col, end_col):
     '''plot the temperature profile with the horizontal line overlayed'''
 
-    plt.figure(figsize=(14, 10))
+    plt.figure(figsize=(24, 14))
     plt.imshow(temp_array, cmap="hot", vmin=15, vmax=300)
     plt.plot([start_col, end_col], [center_row, center_row], color="blue", linewidth=3)
-    plt.xlabel("Column Index", fontsize=20)
-    plt.ylabel("Row Index", fontsize=20)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
+    plt.xlabel("Column Index", fontsize=fontsize)
+    plt.ylabel("Row Index", fontsize=fontsize)
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
     plt.colorbar(label="Temperature (°C)")
     plt.tight_layout()
     plt.show()
@@ -116,8 +121,9 @@ def process_folder(folder_path, reference_time):
 def PlotThermalTraces():
     '''plot the temperature profiles'''
 
-    temperature_profiles = pd.read_csv(csvExportPath)
-    plt.figure(figsize=(14, 10))
+    selected_columns = ["1 seconds", "5 seconds", "15 seconds", "30 seconds", "45 seconds", "60 seconds", "75 seconds", "90 seconds", "105 seconds", "120 seconds"]  # Specify the columns you want to include
+    temperature_profiles = pd.read_csv(csvExportPath, usecols=selected_columns)
+    plt.figure(figsize=(24, 14))
 
     # Generate a colormap based on the number of samples
     colormap = plt.cm.viridis
@@ -126,26 +132,27 @@ def PlotThermalTraces():
     def gaussian(x, a, x0, sigma):
         return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
 
+    ## Plot temperature profiles
     peak_temps = []
     peak_temp_errors = []
-    # Iterate over each column to plot the temperature profiles
-    for i, column in enumerate(temperature_profiles.columns[:13]):
+    cutoff_index = selected_columns.index("60 seconds")
+    for i, column in enumerate(temperature_profiles.columns):
         temperatures = temperature_profiles[column]
-        x_data = range(len(temperatures))
+        x_data = np.linspace(-2.5, 2.5, len(temperatures))  # Map pixel indices to cm with center at 0 cm
 
         # Exclude saturated points
-        valid_indices = temperatures < 270 # lowered slightly from 300 in case the saturation influence extends down a bit
-        x_data_valid = np.array(x_data)[valid_indices]
+        valid_indices = temperatures < 270 if i <= cutoff_index else temperatures < 300
+        x_data_valid = x_data[valid_indices]
         temperatures_valid = temperatures[valid_indices]
 
         # Fit a horizontal line plus a Gaussian to the profile
-        initial_guess = [np.max(temperatures_valid), np.argmax(temperatures_valid), 10]
+        initial_guess = [np.max(temperatures_valid), x_data_valid[np.argmax(temperatures_valid)], 1]
         popt, pcov = curve_fit(gaussian, x_data_valid, temperatures_valid, p0=initial_guess)
         perr = np.sqrt(np.diag(pcov))
 
         # Plot the original profile
         plt.plot(
-            x_data, 
+            x_data,
             temperatures,
             color=colors[i],  # Color based on the sample (time)
             linewidth=3,  # Width of the line
@@ -154,9 +161,9 @@ def PlotThermalTraces():
         )
 
         # Plot the fitted profile as a dotted line
-        fitted_profile = gaussian(np.array(x_data), *popt)
+        fitted_profile = gaussian(x_data, *popt)
         plt.plot(
-            x_data, 
+            x_data,
             fitted_profile,
             color=colors[i],  # Same color as the original profile
             linestyle='dotted',
@@ -168,189 +175,66 @@ def PlotThermalTraces():
         peak_temps.append(popt[0])
         peak_temp_errors.append(perr[0])
 
-    plt.xlabel("Pixel Index", fontsize=20)
-    plt.ylabel("Temperature (°C)", fontsize=20)
-    plt.legend(title="time (s)", loc="upper left", fontsize=14, title_fontsize=14, bbox_to_anchor=(1.05, 1))
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
+    plt.xlabel("distance from beam center (cm)", fontsize=fontsize)
+    plt.ylabel("Temperature (°C)", fontsize=fontsize)
+    plt.axvline(-1.5, color='black', linewidth=1, linestyle='dashed')
+    plt.axvline(1.5, color='black', linewidth=1, linestyle='dashed')
+    plt.legend(title="time (s)", loc="upper left", fontsize=fontsize, bbox_to_anchor=(1.05, 1))
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
     plt.tight_layout()
 
     # Plot Max T vs time with fits
-    plt.figure(figsize=(14, 10))
-    max_temps_times = [int(col.split()[0]) for col in temperature_profiles.columns[:13]]
+    plt.figure(figsize=(24, 14))
+    max_temps_times = [int(col.split()[0]) for col in temperature_profiles.columns]
     plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10)
 
     # Fit peak temps
     def exponential_growth(t, T_steady, T_0, k):
         return T_steady - (T_steady - T_0) * np.exp(-k * t)
-    
+
     def exponential_decay(t, T_steady, T_0, k):
         return T_0 + (T_steady - T_0) * np.exp(-k * t)
 
-    exp_popt, exp_pcov = curve_fit(exponential_growth, max_temps_times, peak_temps, p0=[85, 20, 0.1])
-    time_fit = np.linspace(min(max_temps_times), max(max_temps_times), 100)
+    # Fit for initial phase (up to 60 seconds)
+    exp_popt, exp_pcov = curve_fit(exponential_growth, max_temps_times[:cutoff_index+1], peak_temps[:cutoff_index+1], p0=[85, 20, 0.1])
+    time_fit = np.linspace(min(max_temps_times[:cutoff_index+1]), max(max_temps_times[:cutoff_index+1]), 100)
     exp_fit = exponential_growth(time_fit, *exp_popt)
 
-    plt.plot(time_fit, exp_fit, label=f'Exponential Fit: {exp_popt[0]:.2f} - ({exp_popt[0]:.2f} - {exp_popt[1]:.2f}) * exp(-{exp_popt[2]:.2f} * t)', color='blue', linewidth=3)
+    plt.plot(time_fit, exp_fit, label=f'Exponential Growth Fit: {exp_popt[0]:.2f} - ({exp_popt[0]:.2f} - {exp_popt[1]:.2f}) * exp(-{exp_popt[2]:.2f} * t)', color='blue', linewidth=3)
 
-    plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10, markersize=10)
-
-    plt.xlabel("Time (s)", fontsize=20)
-    plt.ylabel("Temperature (°C)", fontsize=20)
-    plt.legend(fontsize=14)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.tight_layout()
-
-    # Consolidate profiles and fits of columns [13:] into one figure
-    plt.figure(figsize=(14, 10))
-    peak_temps_13 = []
-    peak_temp_errors_13 = []
-    for i, column in enumerate(temperature_profiles.columns[13:], start=13):
-        temperatures = temperature_profiles[column]
-        x_data = range(len(temperatures))
-
-        # Exclude saturated points
-        valid_indices = temperatures < 300
-        x_data_valid = np.array(x_data)[valid_indices]
-        temperatures_valid = temperatures[valid_indices]
-
-        # Fit a horizontal line plus a Gaussian to the profile
-        initial_guess = [np.max(temperatures_valid), np.argmax(temperatures_valid), 10]
-        popt, pcov = curve_fit(gaussian, x_data_valid, temperatures_valid, p0=initial_guess)
-        perr = np.sqrt(np.diag(pcov))
-
-        # Plot the original profile
-        plt.plot(
-            x_data, 
-            temperatures,
-            color=colors[i % len(colors)],  # Color based on the sample (time)
-            linewidth=3,  # Width of the line
-            label=f"{column}",
-            alpha=0.7,
-        )
-
-        # Plot the fitted profile as a dotted line
-        fitted_profile = gaussian(np.array(x_data), *popt)
-        plt.plot(
-            x_data, 
-            fitted_profile,
-            color=colors[i % len(colors)],  # Same color as the original profile
-            linestyle='dotted',
-            linewidth=2,
-            alpha=0.7,
-        )
-
-        # Store the peak temperature from the fit and its error
-        peak_temps_13.append(popt[0])
-        peak_temp_errors_13.append(perr[0])
-
-    plt.xlabel("Pixel Index", fontsize=20)
-    plt.ylabel("Temperature (°C)", fontsize=20)
-    plt.legend(title="time (s)", loc="upper left", fontsize=14, title_fontsize=14, bbox_to_anchor=(1.05, 1))
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.tight_layout()
-
-    # Plot Max T vs time with fits for columns [13:]
-    plt.figure(figsize=(14, 10))
-    max_temps_times_13 = [int(col.split()[0]) for col in temperature_profiles.columns[13:]]
-    plt.errorbar(max_temps_times_13, peak_temps_13, yerr=peak_temp_errors_13, fmt='o', color="red", label="Peak Temp", zorder=10)
-
-    # Fit peak temps
-    exp_popt_13, exp_pcov_13 = curve_fit(exponential_decay, max_temps_times_13, peak_temps_13, p0=[85, 20, 0.1])
-    time_fit_13 = np.linspace(min(max_temps_times_13), max(max_temps_times_13), 100)
+    # Fit for later phase (after 60 seconds)
+    exp_popt_13, exp_pcov_13 = curve_fit(exponential_decay, max_temps_times[cutoff_index:], peak_temps[cutoff_index:], p0=[85, 20, 0.1])
+    time_fit_13 = np.linspace(min(max_temps_times[cutoff_index:]), max(max_temps_times[cutoff_index:]), 100)
     exp_fit_13 = exponential_decay(time_fit_13, *exp_popt_13)
 
-    plt.plot(time_fit_13, exp_fit_13, label=f'Exponential Fit: {exp_popt_13[0]:.2f} - ({exp_popt_13[0]:.2f} - {exp_popt_13[1]:.2f}) * exp(-{exp_popt_13[2]:.2f} * t)', color='blue', linewidth=3)
-    plt.errorbar(max_temps_times_13, peak_temps_13, yerr=peak_temp_errors_13, fmt='o', color="red", label="Peak Temp", zorder=10, markersize=10)
-    plt.xlabel("Time (s)", fontsize=20)
-    plt.ylabel("Temperature (°C)", fontsize=20)
-    plt.legend(fontsize=14)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.tight_layout()
+    plt.plot(time_fit_13, exp_fit_13, label=f'Exponential Decay Fit: {exp_popt_13[0]:.2f} - ({exp_popt_13[0]:.2f} - {exp_popt_13[1]:.2f}) * exp(-{exp_popt_13[2]:.2f} * t)', color='#1e43a1', linewidth=3)
 
-    # Plot residuals for columns [:13]
-    plt.figure(figsize=(14, 10))
-    for i, column in enumerate(temperature_profiles.columns[:13]):
-        temperatures = temperature_profiles[column]
-        x_data = range(len(temperatures))
-
-        # Exclude saturated points
-        valid_indices = temperatures < 270
-        x_data_valid = np.array(x_data)[valid_indices]
-        temperatures_valid = temperatures[valid_indices]
-
-        fitted_profile = gaussian(x_data_valid, *curve_fit(gaussian, x_data_valid, temperatures_valid, p0=[np.max(temperatures_valid), np.argmax(temperatures_valid), 10])[0])
-        residuals = temperatures_valid - fitted_profile
-
-        plt.plot(
-            x_data_valid, 
-            residuals,
-            color=colors[i],  # Color based on the sample (time)
-            linewidth=2, 
-            label=f"{column}",
-            alpha=0.7,
-        )
-
-    plt.axhline(0, color='black', linewidth=1, linestyle='dashed')
-    plt.xlabel("Pixel Index", fontsize=20)
-    plt.ylabel("Residuals (°C)", fontsize=20)
-    plt.legend(title="time (s)", loc="upper left", fontsize=14, title_fontsize=14, bbox_to_anchor=(1.05, 1))
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.tight_layout()
-
-    # Plot residuals for columns [13:]
-    plt.figure(figsize=(14, 10))
-    for i, column in enumerate(temperature_profiles.columns[13:], start=13):
-        temperatures = temperature_profiles[column]
-        x_data = range(len(temperatures))
-
-        # Exclude saturated points
-        valid_indices = temperatures < 300
-        x_data_valid = np.array(x_data)[valid_indices]
-        temperatures_valid = temperatures[valid_indices]
-
-        fitted_profile = gaussian(x_data_valid, *curve_fit(gaussian, x_data_valid, temperatures_valid, p0=[np.max(temperatures_valid), np.argmax(temperatures_valid), 10])[0])
-        residuals = temperatures_valid - fitted_profile
-
-        plt.plot(
-            x_data_valid, 
-            residuals,
-            color=colors[i % len(colors)],  # Color based on the sample (time)
-            linewidth=2,  # Width of the line
-            label=f"{column}",
-            alpha=0.7,
-        )
-
-    plt.axhline(0, color='black', linewidth=1, linestyle='dashed')
-    plt.xlabel("Pixel Index", fontsize=20)
-    plt.ylabel("Residuals (°C)", fontsize=20)
-    plt.legend(title="time (s)", loc="upper left", fontsize=14, title_fontsize=14, bbox_to_anchor=(1.05, 1))
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
+    plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10, markersize=10)
+    plt.xlabel("Time (s)", fontsize=fontsize)
+    plt.ylabel("Temperature (°C)", fontsize=fontsize)
+    plt.legend(fontsize=fontsize)
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
     plt.tight_layout()
     plt.show()
-
 
 ##########
 ## MAIN ##
 ##########
 
-folder_path = "Nov19"
 
-# Calculate reference time for metadata time extraction
-first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
-time_0 = get_exif_time(first_image_path)
-time_offset = 1 # seconds before first image
-reference_time = time_0 - pd.to_timedelta(time_offset, unit='s')
+# # Extract reference time from images
+# folder_path = "Nov19"
+# first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
+# time_0 = get_exif_time(first_image_path)
+# time_offset = 1 # seconds before first image
+# reference_time = time_0 - pd.to_timedelta(time_offset, unit='s')
 
 ## Process the thermal image data and export temperatures to a new CSV file
-temp_profiles_df = process_folder(folder_path, reference_time)
+# temp_profiles_df = process_folder(folder_path, reference_time)
 csvExportPath = "exports/temperature_profiles.csv"
-temp_profiles_df.to_csv(csvExportPath, index=False)
+# temp_profiles_df.to_csv(csvExportPath, index=False)
 
 #%%
 ## plot the temperature profiles
