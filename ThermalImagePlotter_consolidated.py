@@ -1,12 +1,3 @@
-# pixels to cm for line length = 5cm
-   # maybe just for the plots since may not be important for the pics
-# consolidate graphs (SI)
-# produce a version with only a handful of representative datasets (main paper)
-# consolidate residuals (SI)
-
-# color red/blue
-# intervals to 0.5 cm
-
 import os
 from PIL import Image, ExifTags
 import numpy as np
@@ -122,7 +113,7 @@ def PlotThermalTraces():
     '''plot the temperature profiles'''
 
     selected_columns = ["5 seconds", "15 seconds", "30 seconds", "60 seconds", "65 seconds", "90 seconds", "120 seconds"]
-    temperature_profiles = pd.read_csv(csvExportPath)#, usecols=selected_columns)
+    temperature_profiles = pd.read_csv(csvImportPath)#, usecols=selected_columns)
     plt.figure(figsize=(18, 12))
 
     # Generate a colormap based on the number of samples
@@ -219,24 +210,26 @@ def PlotThermalTraces():
     plt.tight_layout()
     plt.show()
 
+def referenceTimeExtraction(folder_path):
+    # Extract reference time from images
+    first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
+    time_0 = get_exif_time(first_image_path)
+    time_offset = 1 # seconds before first image
+    reference_time = time_0 - pd.to_timedelta(time_offset, unit='s')
+    return reference_time
+
+def exportCSV(folder_path, reference_time):
+    # Process the thermal image data and export temperatures to a new CSV file
+    temp_profiles_df = process_folder(folder_path, reference_time)
+    csvExportPath = "exports/temperature_profiles.csv"
+    temp_profiles_df.to_csv(csvExportPath, index=False)
+    
 ##########
 ## MAIN ##
 ##########
 
-
-# # Extract reference time from images
-# folder_path = "Nov19"
-# first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
-# time_0 = get_exif_time(first_image_path)
-# time_offset = 1 # seconds before first image
-# reference_time = time_0 - pd.to_timedelta(time_offset, unit='s')
-
-## Process the thermal image data and export temperatures to a new CSV file
-# temp_profiles_df = process_folder(folder_path, reference_time)
-csvExportPath = "exports/temperature_profiles.csv"
-# temp_profiles_df.to_csv(csvExportPath, index=False)
-
-#%%
-## plot the temperature profiles
+# referenceTime = referenceTimeExtraction('Nov19')
+# exportCSV("Nov19", referenceTimeExtraction())
+csvImportPath = "exports/temperature_profiles.csv"
 PlotThermalTraces()
 #%%

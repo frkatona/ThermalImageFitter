@@ -73,7 +73,7 @@ Note that while images were taken at second 1 as well as every 5 seconds for 2 m
 
 ![heating and cooling profiles - smoothed](exports/05_heating-and-cooling-profiles_smoothed.png)
 
-### Figure 6: Heating thermal profiles across images (no smoothing, gaussian fit)
+### Figure 6: Heating thermal profiles across images (gaussian fit)
 
 Note that the gaussian fits estimate the maximum temperature of the object for saturated profiles.
 
