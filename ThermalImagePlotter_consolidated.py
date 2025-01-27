@@ -87,9 +87,9 @@ def process_image(file_path):
 def TroubleshootLinePosition(temp_array, center_row, start_col, end_col):
     '''plot the temperature profile with the horizontal line overlayed'''
 
-    plt.figure(figsize=(24, 14))
+    plt.figure(figsize=(12, 6))
     plt.imshow(temp_array, cmap="hot", vmin=15, vmax=300)
-    plt.plot([start_col, end_col], [center_row, center_row], color="blue", linewidth=3)
+    plt.plot([start_col, end_col], [center_row, center_row], color="#2233CC", linewidth=3)
     plt.xlabel("Column Index", fontsize=fontsize)
     plt.ylabel("Row Index", fontsize=fontsize)
     plt.xticks(fontsize=fontsize)
@@ -121,13 +121,13 @@ def process_folder(folder_path, reference_time):
 def PlotThermalTraces():
     '''plot the temperature profiles'''
 
-    selected_columns = ["1 seconds", "5 seconds", "15 seconds", "30 seconds", "45 seconds", "60 seconds", "75 seconds", "90 seconds", "105 seconds", "120 seconds"]  # Specify the columns you want to include
-    temperature_profiles = pd.read_csv(csvExportPath, usecols=selected_columns)
-    plt.figure(figsize=(24, 14))
+    selected_columns = ["5 seconds", "15 seconds", "30 seconds", "60 seconds", "65 seconds", "90 seconds", "120 seconds"]
+    temperature_profiles = pd.read_csv(csvExportPath)#, usecols=selected_columns)
+    plt.figure(figsize=(18, 12))
 
     # Generate a colormap based on the number of samples
-    colormap = plt.cm.viridis
-    colors = colormap(np.linspace(0, 1, len(temperature_profiles.columns)))
+    cutoff_index = 12 #selected_columns.index("60 seconds")
+    colors = ['#CC3322' if i <= cutoff_index else '#2233CC' for i in range(len(temperature_profiles.columns))]
 
     def gaussian(x, a, x0, sigma):
         return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
@@ -135,7 +135,6 @@ def PlotThermalTraces():
     ## Plot temperature profiles
     peak_temps = []
     peak_temp_errors = []
-    cutoff_index = selected_columns.index("60 seconds")
     for i, column in enumerate(temperature_profiles.columns):
         temperatures = temperature_profiles[column]
         x_data = np.linspace(-2.5, 2.5, len(temperatures))  # Map pixel indices to cm with center at 0 cm
@@ -185,10 +184,11 @@ def PlotThermalTraces():
     plt.tight_layout()
 
     # Plot Max T vs time with fits
-    plt.figure(figsize=(24, 14))
+    plt.figure(figsize=(12, 6))
     max_temps_times = [int(col.split()[0]) for col in temperature_profiles.columns]
-    plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10)
 
+    plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="#CC3322", label="Peak Temp", zorder=10)
+    
     # Fit peak temps
     def exponential_growth(t, T_steady, T_0, k):
         return T_steady - (T_steady - T_0) * np.exp(-k * t)
@@ -197,22 +197,22 @@ def PlotThermalTraces():
         return T_0 + (T_steady - T_0) * np.exp(-k * t)
 
     # Fit for initial phase (up to 60 seconds)
-    exp_popt, exp_pcov = curve_fit(exponential_growth, max_temps_times[:cutoff_index+1], peak_temps[:cutoff_index+1], p0=[85, 20, 0.1])
-    time_fit = np.linspace(min(max_temps_times[:cutoff_index+1]), max(max_temps_times[:cutoff_index+1]), 100)
-    exp_fit = exponential_growth(time_fit, *exp_popt)
+    exp_popt_heating, exp_pcov = curve_fit(exponential_growth, max_temps_times[:cutoff_index+1], peak_temps[:cutoff_index+1], p0=[85, 20, 0.1])
+    time_fit_heating = np.linspace(min(max_temps_times[:cutoff_index+1]), max(max_temps_times[:cutoff_index+1]), 100)
+    exp_fit_heating = exponential_growth(time_fit_heating, *exp_popt_heating)
 
-    plt.plot(time_fit, exp_fit, label=f'Exponential Growth Fit: {exp_popt[0]:.2f} - ({exp_popt[0]:.2f} - {exp_popt[1]:.2f}) * exp(-{exp_popt[2]:.2f} * t)', color='blue', linewidth=3)
+    plt.plot(time_fit_heating, exp_fit_heating, label=f'Exponential Growth Fit: {exp_popt_heating[0]:.2f} - ({exp_popt_heating[0]:.2f} - {exp_popt_heating[1]:.2f}) * exp(-{exp_popt_heating[2]:.2f} * t)', color='#2233CC', linewidth=3)
 
     # Fit for later phase (after 60 seconds)
-    exp_popt_13, exp_pcov_13 = curve_fit(exponential_decay, max_temps_times[cutoff_index:], peak_temps[cutoff_index:], p0=[85, 20, 0.1])
-    time_fit_13 = np.linspace(min(max_temps_times[cutoff_index:]), max(max_temps_times[cutoff_index:]), 100)
-    exp_fit_13 = exponential_decay(time_fit_13, *exp_popt_13)
+    exp_popt_cooling, exp_pcov_13 = curve_fit(exponential_decay, max_temps_times[cutoff_index:], peak_temps[cutoff_index:], p0=[18000, 60, 0.1])
+    time_fit_cooling = np.linspace(min(max_temps_times[cutoff_index:]), max(max_temps_times[cutoff_index:]), 100)
+    exp_fit_cooling = exponential_decay(time_fit_cooling, *exp_popt_cooling)
 
-    plt.plot(time_fit_13, exp_fit_13, label=f'Exponential Decay Fit: {exp_popt_13[0]:.2f} - ({exp_popt_13[0]:.2f} - {exp_popt_13[1]:.2f}) * exp(-{exp_popt_13[2]:.2f} * t)', color='#1e43a1', linewidth=3)
+    plt.plot(time_fit_cooling, exp_fit_cooling, label=f'Exponential Decay Fit: {exp_popt_cooling[0]:.2f} - ({exp_popt_cooling[0]:.2f} - {exp_popt_cooling[1]:.2f}) * exp(-{exp_popt_cooling[2]:.2f} * t)', color='#2233CC', linewidth=3)
 
-    plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color="red", label="Peak Temp", zorder=10, markersize=10)
-    plt.xlabel("Time (s)", fontsize=fontsize)
-    plt.ylabel("Temperature (°C)", fontsize=fontsize)
+    plt.errorbar(max_temps_times, peak_temps, yerr=peak_temp_errors, fmt='o', color='#CC3322', label="Peak Temp", zorder=10, markersize=10)
+    plt.xlabel("time (s)", fontsize=fontsize)
+    plt.ylabel("temperature (°C)", fontsize=fontsize)
     plt.legend(fontsize=fontsize)
     plt.xticks(fontsize=fontsize)
     plt.yticks(fontsize=fontsize)
